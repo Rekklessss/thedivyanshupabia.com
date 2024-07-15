@@ -28,7 +28,7 @@
 
     - name: Copy Nginx configuration
       copy:
-        src: /Users/divyanshupabia/Developer/thedivyanshupabia.com/nginx/default
+        src: nginx/default
         dest: /etc/nginx/nginx.conf
         owner: root
         group: root
