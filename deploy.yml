@@ -1,0 +1,58 @@
+---
+- hosts: web
+  become: yes
+  tasks:
+    - name: Update yum cache and install dependencies
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - docker
+        - python3-pip
+        - nginx
+        - nodejs
+        - npm
+        - rsync
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Start and enable Nginx
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Copy Nginx configuration
+      copy:
+        src: /Users/divyanshupabia/Developer/thedivyanshupabia.com/nginx/default
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Restart Nginx
+
+    - name: Ensure correct permissions for nginx directory
+      file:
+        path: /usr/share/nginx/html
+        owner: nginx
+        group: nginx
+        recurse: yes
+
+    - name: Set permissions for website files
+      file:
+        path: /usr/share/nginx/html/retro-website
+        owner: nginx
+        group: nginx
+        mode: 0755
+        recurse: yes
+
+  handlers:
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
