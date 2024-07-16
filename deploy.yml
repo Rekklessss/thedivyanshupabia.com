@@ -26,10 +26,16 @@
     - name: Pull the latest Docker image
       command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
 
+    - name: Stop Nginx service if running
+      systemd:
+        name: nginx
+        state: stopped
+      ignore_errors: yes
+
     - name: Stop and remove old container if exists
       shell: |
-        docker ps -q --filter "name={{ container_name }}" | grep -q . && docker stop {{ container_name }}
-        docker ps -a -q --filter "name={{ container_name }}" | grep -q . && docker rm {{ container_name }}
+        docker ps -q --filter "name={{ container_name }}" | grep -q . && docker stop {{ container_name }} || true
+        docker ps -a -q --filter "name={{ container_name }}" | grep -q . && docker rm {{ container_name }} || true
       ignore_errors: yes
 
     - name: Run the new container
