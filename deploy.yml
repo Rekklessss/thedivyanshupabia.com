@@ -3,10 +3,6 @@
   become: yes
   vars:
     container_name: thedivyanshupabia.com  # Set your container name here
-    ghcr_username: rekklessss
-    ghcr_token: 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
-    ghcr_repository_owner: rekklessss
-    ghcr_repository: thedivyanshupabia.com
 
   tasks:
     - name: Update yum cache and install Docker
@@ -22,10 +18,13 @@
         enabled: yes
 
     - name: Log in to GitHub Container Registry
-      shell: echo "{{ ghcr_token }}" | docker login ghcr.io -u {{ ghcr_username }} --password-stdin
+      shell: echo "{{ lookup('env', 'GHCR_TOKEN') }}" | docker login ghcr.io -u {{ lookup('env', 'GHCR_USERNAME') }} --password-stdin
+      environment:
+        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
+        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
 
     - name: Pull the latest Docker image
-      command: "docker pull ghcr.io/{{ ghcr_repository_owner }}/{{ ghcr_repository }}:latest"
+      command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
 
     - name: Stop Nginx service if running
       systemd:
@@ -47,7 +46,12 @@
         -v /etc/letsencrypt/ssl-dhparams.pem:/etc/letsencrypt/ssl-dhparams.pem
         -v /etc/letsencrypt/live/thedivyanshupabia.com/fullchain.pem:/etc/letsencrypt/live/thedivyanshupabia.com/fullchain.pem
         -v /etc/letsencrypt/live/thedivyanshupabia.com/privkey.pem:/etc/letsencrypt/live/thedivyanshupabia.com/privkey.pem
-        ghcr.io/{{ ghcr_repository_owner }}/{{ ghcr_repository }}:latest
+        ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest
+      environment:
+        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
+        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
+        GHCR_REPOSITORY_OWNER: "{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}"
+        GHCR_REPOSITORY: "{{ lookup('env', 'GHCR_REPOSITORY') }}"
 
   handlers:
     - name: Restart Nginx
