@@ -3,6 +3,10 @@
   become: yes
   vars:
     container_name: thedivyanshupabia.com  # Set your container name here
+    ghcr_username: rekklessss
+    ghcr_token: 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
+    ghcr_repository_owner: rekklessss
+    ghcr_repository: thedivyanshupabia.com
 
   tasks:
     - name: Update yum cache and install Docker
@@ -18,13 +22,10 @@
         enabled: yes
 
     - name: Log in to GitHub Container Registry
-      command: "docker login ghcr.io -u {{ lookup('env', 'GHCR_USERNAME') }} -p {{ lookup('env', 'GHCR_TOKEN') }}"
-      environment:
-        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
-        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
+      command: "docker login ghcr.io -u {{ ghcr_username }} -p {{ ghcr_token }}"
 
     - name: Pull the latest Docker image
-      command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
+      command: "docker pull ghcr.io/{{ ghcr_repository_owner }}/{{ ghcr_repository }}:latest"
 
     - name: Stop Nginx service if running
       systemd:
@@ -42,12 +43,7 @@
       command: >
         docker run -d -p 80:80 -p 443:443
         --name {{ container_name }}
-        ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest
-      environment:
-        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
-        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
-        GHCR_REPOSITORY_OWNER: "{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}"
-        GHCR_REPOSITORY: "{{ lookup('env', 'GHCR_REPOSITORY') }}"
+        ghcr.io/{{ ghcr_repository_owner }}/{{ ghcr_repository }}:latest
 
     - name: Copy Nginx configuration
       copy:
