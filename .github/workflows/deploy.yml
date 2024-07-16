@@ -21,7 +21,7 @@ jobs:
       with:
         registry: ghcr.io
         username: rekklessss
-        password: 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
+        password: ${{ secrets.GHCR_TOKEN }}
 
     - name: Set lowercase repository names
       id: set-repo-names
@@ -53,6 +53,6 @@ jobs:
       run: ansible-playbook -i inventory deploy.yml
       env:
         GHCR_USERNAME: rekklessss
-        GHCR_TOKEN: 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
+        GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         GHCR_REPOSITORY_OWNER: rekklessss
         GHCR_REPOSITORY: thedivyanshupabia.com
