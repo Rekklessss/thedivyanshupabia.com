@@ -44,7 +44,7 @@ jobs:
     - name: Create temporary inventory file
       run: |
         echo '[web]' > inventory
-        echo '${{ secrets.EC2_PUBLIC_IP }} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/home/runner/.ssh/id_rsa' >> inventory
+        echo '${{ secrets.EC2_PUBLIC_IP }} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/home/runner/.ssh/id_rsa ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"' >> inventory
 
     - name: Install Ansible
       run: sudo apt-get update && sudo apt-get install -y ansible
