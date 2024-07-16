@@ -1,30 +1,47 @@
 ---
 - hosts: web
   become: yes
-  tasks:
-    - name: Update yum cache and install dependencies
-      yum:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - docker
-        - python3-pip
-        - nginx
-        - nodejs
-        - npm
-        - rsync
+  vars:
+    container_name: thedivyanshupabia.com  # Set your container name here
 
-    - name: Start and enable Docker
+  tasks:
+    - name: Update yum cache and install Docker
+      yum:
+        name: docker
+        state: present
+      register: yum_result
+
+    - name: Ensure Docker is started and enabled
       systemd:
         name: docker
         state: started
         enabled: yes
 
-    - name: Start and enable Nginx
-      systemd:
-        name: nginx
-        state: started
-        enabled: yes
+    - name: Log in to GitHub Container Registry
+      command: "docker login ghcr.io -u {{ lookup('env', 'GHCR_USERNAME') }} -p {{ lookup('env', 'GHCR_TOKEN') }}"
+      environment:
+        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
+        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
+
+    - name: Pull the latest Docker image
+      command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
+
+    - name: Stop and remove old container if exists
+      shell: |
+        docker ps -q --filter "name={{ container_name }}" | grep -q . && docker stop {{ container_name }}
+        docker ps -a -q --filter "name={{ container_name }}" | grep -q . && docker rm {{ container_name }}
+      ignore_errors: yes
+
+    - name: Run the new container
+      command: >
+        docker run -d -p 80:80 -p 443:443
+        --name {{ container_name }}
+        ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest
+      environment:
+        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
+        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
+        GHCR_REPOSITORY_OWNER: "{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}"
+        GHCR_REPOSITORY: "{{ lookup('env', 'GHCR_REPOSITORY') }}"
 
     - name: Copy Nginx configuration
       copy:
@@ -35,21 +52,6 @@
         mode: 0644
       notify:
         - Restart Nginx
-
-    - name: Ensure correct permissions for nginx directory
-      file:
-        path: /usr/share/nginx/html
-        owner: nginx
-        group: nginx
-        recurse: yes
-
-    - name: Set permissions for website files
-      file:
-        path: /usr/share/nginx/html/retro-website
-        owner: nginx
-        group: nginx
-        mode: 0755
-        recurse: yes
 
   handlers:
     - name: Restart Nginx

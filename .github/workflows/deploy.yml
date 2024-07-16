@@ -1,4 +1,4 @@
-name: Deploy Website
+name: Build and Deploy Docker Image
 
 on:
   push:
@@ -13,42 +13,40 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v1
       with:
-        node-version: '14' # Use the Node.js version required by your project
+        registry: ghcr.io
+        username: ${{ secrets.GHCR_USERNAME }}
+        password: ${{ secrets.GHCR_TOKEN }}
 
-    - name: Install dependencies
-      working-directory: ./retro-website
-      run: npm install
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/${{ secrets.GHCR_REPOSITORY_OWNER }}/${{ secrets.GHCR_REPOSITORY }}:latest
 
-    - name: Build the website
-      working-directory: ./retro-website
-      run: npm run build
+    - name: Add SSH private key
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Add SSH key
+    - name: Create temporary inventory file
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
-
-    - name: Create dynamic inventory file
-      run: |
-        echo "[web]" > inventory
-        echo "${{ secrets.EC2_PUBLIC_IP }} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_extra_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" >> inventory
-
-    - name: Copy build files to server
-      run: |
-        rsync -avz --delete retro-website/dist/ ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/home/ec2-user/retro-website/dist/
-        ssh ec2-user@${{ secrets.EC2_PUBLIC_IP }} "sudo rsync -avz /home/ec2-user/retro-website/dist/ /usr/share/nginx/html/retro-website/dist/"
+        echo '[web]' > inventory
+        echo '${{ secrets.EC2_PUBLIC_IP }} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/home/runner/.ssh/id_rsa' >> inventory
 
     - name: Install Ansible
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ansible
+      run: sudo apt-get update && sudo apt-get install -y ansible
 
     - name: Run Ansible Playbook
       run: ansible-playbook -i inventory deploy.yml
       env:
-        ANSIBLE_HOST_KEY_CHECKING: "false"
+        GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+        GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        GHCR_REPOSITORY_OWNER: ${{ secrets.GHCR_REPOSITORY_OWNER }}
+        GHCR_REPOSITORY: ${{ secrets.GHCR_REPOSITORY }}
