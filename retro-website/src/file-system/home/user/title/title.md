@@ -3,7 +3,7 @@
 
 ##   Hi there, 
 
-#  *I'm Divyanshu*
+#  *I'm Div*
 
 ##   • Software Engineer
 ##   • Perfectionist
