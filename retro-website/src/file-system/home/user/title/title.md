@@ -5,7 +5,7 @@
 
 #  *I'm Div*
 
-##   • Samssssssss
+##   • Software Developer
 ##   • Perfectionist
 
 
