@@ -5,7 +5,7 @@
 
 #  *I'm Div*
 
-##   • Software Raper
+##   • Software Developer
 ##   • Perfectionist
 
 
