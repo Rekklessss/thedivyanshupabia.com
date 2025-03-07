@@ -50,6 +50,16 @@
     - name: Pull the latest Docker image
       command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
 
+    - name: Stop and remove old container if exists
+      shell: |
+        docker ps -q --filter "name={{ container_name }}" | grep -q . && docker stop {{ container_name }} || true
+        docker ps -a -q --filter "name={{ container_name }}" | grep -q . && docker rm -f {{ container_name }} || true
+      ignore_errors: yes
+
+    - name: Ensure port 443 is not in use before running the container
+      shell: fuser -k 443/tcp || true
+      ignore_errors: yes
+
     - name: Run the new container with mounted SSL files
       command: >
         docker run -d -p 80:80 -p 443:443
