@@ -1,1 +1,75 @@
+# Ignore Node.js dependencies
+node_modules/
+*.log
+
+# Ignore macOS system files
+.DS_Store
+
+
+
+# Ignore environment and secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.pem
+*.key
+*.crt
+*.p12
+
+# Ignore Terraform files
 .terraform/
+.terraform.lock.hcl
+
+# Ignore Docker files
+docker-compose.override.yml
+
+# Ignore Vite and TypeScript config output
+.vite/
+.vitepress/
+.vitest/
+*.tsbuildinfo
+
+# Ignore compiled TypeScript files
+*.js
+*.js.map
+*.d.ts
+
+# Ignore compiled assets
+assets/
+fonts/
+icon/
+images/
+models/
+textures/
+
+# Ignore log and debug files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore package manager lock files (optional, depending on workflow)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+*.iml
+
+# Ignore Ansible inventory and deploy configurations
+inventory
+deploy.yml
+
+# Ignore Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Ignore temporary files
+tmp/
+temp/
+.cache/
