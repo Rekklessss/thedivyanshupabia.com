@@ -5,8 +5,6 @@ node_modules/
 # Ignore macOS system files
 .DS_Store
 
-
-
 # Ignore environment and secrets
 .env
 .env.local
@@ -31,19 +29,6 @@ docker-compose.override.yml
 .vitest/
 *.tsbuildinfo
 
-# Ignore compiled TypeScript files
-*.js
-*.js.map
-*.d.ts
-
-# Ignore compiled assets
-assets/
-fonts/
-icon/
-images/
-models/
-textures/
-
 # Ignore log and debug files
 *.log
 npm-debug.log*
@@ -61,15 +46,6 @@ pnpm-lock.yaml
 .idea/
 *.iml
 
-# Ignore Ansible inventory and deploy configurations
-inventory
-deploy.yml
-
 # Ignore Terraform state files
 *.tfstate
 *.tfstate.*
-
-# Ignore temporary files
-tmp/
-temp/
-.cache/

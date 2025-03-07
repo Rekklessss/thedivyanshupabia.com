@@ -3,6 +3,7 @@
   become: yes
   vars:
     container_name: thedivyanshupabia.com  # Set your container name here
+    certbot_cert_path: "/etc/letsencrypt/live/thedivyanshupabia.com"
 
   tasks:
     - name: Update yum cache and install Docker
@@ -17,15 +18,6 @@
         state: started
         enabled: yes
 
-    - name: Log in to GitHub Container Registry
-      shell: echo "{{ lookup('env', 'GHCR_TOKEN') }}" | docker login ghcr.io -u {{ lookup('env', 'GHCR_USERNAME') }} --password-stdin
-      environment:
-        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
-        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
-
-    - name: Pull the latest Docker image
-      command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
-
     - name: Stop Nginx service if running
       systemd:
         name: nginx
@@ -38,14 +30,34 @@
         docker ps -a -q --filter "name={{ container_name }}" | grep -q . && docker rm {{ container_name }} || true
       ignore_errors: yes
 
+    - name: Check if SSL certificate exists
+      stat:
+        path: "{{ certbot_cert_path }}/fullchain.pem"
+      register: ssl_cert
+
+    - name: Renew SSL certificate if expired
+      shell: certbot renew --quiet
+      when: ssl_cert.stat.exists
+      register: cert_renew
+      changed_when: cert_renew.rc == 0
+
+    - name: Log in to GitHub Container Registry
+      shell: echo "{{ lookup('env', 'GHCR_TOKEN') }}" | docker login ghcr.io -u {{ lookup('env', 'GHCR_USERNAME') }} --password-stdin
+      environment:
+        GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
+        GHCR_TOKEN: "{{ lookup('env', 'GHCR_TOKEN') }}"
+
+    - name: Pull the latest Docker image
+      command: "docker pull ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest"
+
     - name: Run the new container with mounted SSL files
       command: >
         docker run -d -p 80:80 -p 443:443
         --name {{ container_name }}
         -v /etc/letsencrypt/options-ssl-nginx.conf:/etc/letsencrypt/options-ssl-nginx.conf
         -v /etc/letsencrypt/ssl-dhparams.pem:/etc/letsencrypt/ssl-dhparams.pem
-        -v /etc/letsencrypt/live/thedivyanshupabia.com/fullchain.pem:/etc/letsencrypt/live/thedivyanshupabia.com/fullchain.pem
-        -v /etc/letsencrypt/live/thedivyanshupabia.com/privkey.pem:/etc/letsencrypt/live/thedivyanshupabia.com/privkey.pem
+        -v {{ certbot_cert_path }}/fullchain.pem:{{ certbot_cert_path }}/fullchain.pem
+        -v {{ certbot_cert_path }}/privkey.pem:{{ certbot_cert_path }}/privkey.pem
         ghcr.io/{{ lookup('env', 'GHCR_REPOSITORY_OWNER') }}/{{ lookup('env', 'GHCR_REPOSITORY') }}:latest
       environment:
         GHCR_USERNAME: "{{ lookup('env', 'GHCR_USERNAME') }}"
@@ -58,3 +70,4 @@
       systemd:
         name: nginx
         state: restarted
+      when: cert_renew.changed
